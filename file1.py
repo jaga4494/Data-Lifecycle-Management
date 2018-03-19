@@ -8,8 +8,8 @@ client=boto3.client('s3')
 
 s3 = boto3.resource(
     's3',
-    # aws_access_key_id='AKIAJNOFGOPQQEQJDMQQ',
-    # aws_secret_access_key='50/3bEhnDms7xOeVDwclzOcYgHAwAskX+RM20UvE'
+    # aws_access_key_id='Youe access key',
+    # aws_secret_access_key='Your secret key'
     )
 # Print out bucket names-----------------
 for bucket in s3.buckets.all():
