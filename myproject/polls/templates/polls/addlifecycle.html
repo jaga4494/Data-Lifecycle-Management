@@ -1,0 +1,32 @@
+
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+{% if not message %}
+    <p> **Enter number of days after the creation date of bucket</p></br>
+
+    <form method="GET">
+    {% csrf_token %}
+<pre>Enter Rule Name:        <input type="text" placeholder="Rule name" name="rule" ></input></br>
+Transition Rules:
+    <pre> Move to Storage_IA:     <input type="number"  placeholder="Number of days" name="ia" ></input>
+ Move to Glacier:        <input type="number" placeholder="Number of days" name="glacier"></input></pre>
+
+Expiration Rule:
+<pre> Delete the bucket:      <input type="number" placeholder="Number of days" name="expire"></input></pre>
+    <input type="submit" value="Add Rule" />
+    </form>
+
+
+{% elif httpcode.ResponseMetadata.HTTPStatusCode == 200 %}
+        <b>{{message}}</b></br></br>
+        {% for k,v in result.items %}
+            {{k}} --- {{v}}</br>
+        {% endfor %}
+        </b></br></br>
+        {{newrule}}
+{% else %}
+        Error in form submission!! <br>Value of Storage IA must be greater than or equal to 30, Glacier must be atleast 30 more than Storage_IA
+        and Expire must be greater than maximum of Storage_IA or Glacier
+{% endif %}
+

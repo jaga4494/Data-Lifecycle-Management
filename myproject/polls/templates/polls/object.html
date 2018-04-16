@@ -1,0 +1,7 @@
+<ul>
+{% for obj in bucket.objects.all %}
+
+<li>{{obj.key}}</li>
+
+{% endfor %}
+</ul>

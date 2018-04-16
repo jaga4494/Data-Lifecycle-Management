@@ -1,0 +1,15 @@
+<h1>Enter New user information</h1>
+
+<form method="POST">
+{% csrf_token %}
+
+<pre>Enter your Name:      <input type="name" placeholder="Name" name="name" required></input>
+Enter Email:          <input type="email" placeholder="Email" name="email" required></input>
+Enter Access Key:     <input type="text"  placeholder="Access Key" name="accesskey" required></input>
+Enter Secret Key:     <input type="text" placeholder="Secret Key" name="secretkey" required></input></pre>
+
+<input type="submit" value="Submit" />
+<form>
+
+</br>{{message}}</br>
+{{result}}

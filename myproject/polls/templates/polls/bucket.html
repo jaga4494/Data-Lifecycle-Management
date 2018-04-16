@@ -1,0 +1,11 @@
+<ul>
+
+{% for bucket in bucketlist %}
+
+  <li><a href="{% url 'object' user_email=user.email bucket_name=bucket.name %}">{{bucket.name}}</a>
+<span style="display:inline-block; width: 100;"></span>
+<a href="{% url 'addlifecycle' user_email=user.email bucket_name=bucket.name %}">Add lifecycle rule</a>
+  </li>
+
+{% endfor %}
+</ul>
