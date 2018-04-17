@@ -1,15 +1,26 @@
+{%  extends "polls/base_generic.html" %}
 
+{% block title %}<title>Add a new lifecycle policy</title>{% endblock %}
 
-{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+{% block pageheading %}<h3>Add a new lifecycle policy</h3>{% endblock %}
 
-{% if not message %}
+{% block sidebar %}
+  <ul class="sidebar-nav">
+    <li><a href="{% url 'index' %}">Home</a></li>
+    <li><a href="{% url 'bucket' email %}">My buckets</a> </li>
+  </ul>
+{% endblock %}
+
+{% block content %}
+
+    {% if not message %}
     <p> **Enter number of days after the creation date of bucket</p></br>
 
     <form method="GET">
     {% csrf_token %}
-<pre>Enter Rule Name:        <input type="text" placeholder="Rule name" name="rule" ></input></br>
+<pre>Enter Rule Name:          <input type="text" placeholder="Rule name" name="rule" ></input></br>
 Transition Rules:
-    <pre> Move to Storage_IA:     <input type="number"  placeholder="Number of days" name="ia" ></input>
+<pre> Move to Storage_IA:     <input type="number"  placeholder="Number of days" name="ia" ></input>
  Move to Glacier:        <input type="number" placeholder="Number of days" name="glacier"></input></pre>
 
 Expiration Rule:
@@ -30,3 +41,4 @@ Expiration Rule:
         and Expire must be greater than maximum of Storage_IA or Glacier
 {% endif %}
 
+{% endblock %}

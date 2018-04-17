@@ -1,4 +1,17 @@
-<p>User name is </p><h1>{{user.name}}</h1>
-<p>Email address is {{user.email}}</p>
-<p>Accesskey is {{user.accesskey}}</p>
-<p>Secretkey is {{user.secretkey}}</p>
+{%  extends "polls/base_generic.html" %}
+
+{% block title %}<title>About me</title>{% endblock %}
+{% block pageheading %}<h3>About me!!</h3>{% endblock %}
+{% block sidebar %}
+  <ul class="sidebar-nav">
+    <li><a href="{% url 'index' %}">Home</a></li>
+    <li><a href="{% url 'bucket' user.email %}">My buckets</a> </li>
+  </ul>
+{% endblock %}
+{% block content %}
+<p>User name - {{user.name}}</p>
+<p>Email address - {{user.email}}</p>
+<p>Accesskey - {{user.accesskey}}</p>
+<p>Secretkey - {{user.secretkey}}</p>
+
+{% endblock %}

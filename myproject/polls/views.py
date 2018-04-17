@@ -38,7 +38,7 @@ def index(request):
 # ex: /polls/jsarava@ncsu.edu/<bucketname>/addlifecycle
 def addlifecycle(request, user_email, bucket_name):
     result={}
-    context={}
+    context={'email': user_email}
     newrule={}
     newrule_json={}
     if request.GET.get('rule'):
@@ -51,8 +51,6 @@ def addlifecycle(request, user_email, bucket_name):
 
         #error for Wrong values
 
-
-        # print(type((int(result["Storage_IA"]))), type((int(result["Glacier"]))), type((int(result["Expire"]))))
 
         if(int(result["Storage_IA"])>=30 and int(result["Glacier"]) >= int(result["Storage_IA"]) + 30
         and int(result["Expire"]) > int(result["Glacier"])):
