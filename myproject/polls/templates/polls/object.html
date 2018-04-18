@@ -1,7 +1,23 @@
-<ul>
+{%  extends "polls/base_generic.html" %}
+
+{% block title %}<title>Object</title>{% endblock %}
+
+{% block pageheading %}<h3>Object List</h3>{% endblock %}
+
+{% block sidebar %}
+  <ul class="sidebar-nav">
+    <li><a href="{% url 'index' %}">Home</a></li>
+    <li><a href="{% url 'newuser' %}">Add new User</a> </li>
+    <li><a href="{% url 'bucket' email %}">Buckets</a> </li>
+  </ul>
+{% endblock %}
+
+{% block content %}
+<ol>
 {% for obj in bucket.objects.all %}
 
 <li>{{obj.key}}</li>
 
 {% endfor %}
-</ul>
+</ol>
+{% endblock %}

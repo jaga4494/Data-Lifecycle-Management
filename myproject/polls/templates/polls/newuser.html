@@ -1,15 +1,29 @@
-<h1>Enter New user information</h1>
+{%  extends "polls/base_generic.html" %}
+
+{% block title %}<title>New User</title>{% endblock %}
+
+{% block pageheading %}<h3>Enter new user information</h3>{% endblock %}
+
+{% block sidebar %}
+  <ul class="sidebar-nav">
+    <li><a href="{% url 'index' %}">Home</a></li>
+  </ul>
+{% endblock %}
+
+{% block content %}
+<h1></h1>
 
 <form method="POST">
 {% csrf_token %}
 
-<pre>Enter your Name:      <input type="name" placeholder="Name" name="name" required></input>
-Enter Email:          <input type="email" placeholder="Email" name="email" required></input>
-Enter Access Key:     <input type="text"  placeholder="Access Key" name="accesskey" required></input>
-Enter Secret Key:     <input type="text" placeholder="Secret Key" name="secretkey" required></input></pre>
+<pre>Enter your Name:      <input type="name" placeholder="Name" name="name" required />
+Enter Email:          <input type="email" placeholder="Email" name="email" required />
+Enter Access Key:     <input type="text"  placeholder="Access Key" name="accesskey" required />
+Enter Secret Key:     <input type="text" placeholder="Secret Key" name="secretkey" required /></pre>
 
 <input type="submit" value="Submit" />
 <form>
+<br>
+    <b>{{ message }}</b>
 
-</br>{{message}}</br>
-{{result}}
+{% endblock %}

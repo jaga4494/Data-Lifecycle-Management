@@ -1,17 +1,19 @@
 {%  extends "polls/base_generic.html" %}
 
-{% block title %}<title>About me</title>{% endblock %}
-{% block pageheading %}<h3>About me!!</h3>{% endblock %}
+{% block title %}<title>User Details</title>{% endblock %}
+{% block pageheading %}<h3>User Details</h3>{% endblock %}
 {% block sidebar %}
   <ul class="sidebar-nav">
     <li><a href="{% url 'index' %}">Home</a></li>
-    <li><a href="{% url 'bucket' user.email %}">My buckets</a> </li>
+    <li><a href="{% url 'newuser' %}">Add new User</a> </li>
+    <li><a href="{% url 'bucket' user.email %}">Buckets</a> </li>
   </ul>
 {% endblock %}
 {% block content %}
-<p>User name - {{user.name}}</p>
-<p>Email address - {{user.email}}</p>
-<p>Accesskey - {{user.accesskey}}</p>
-<p>Secretkey - {{user.secretkey}}</p>
-
+    <ul>
+        <li><b>User name</b> - {{user.name}}</li>
+        <li><b>Email address</b> - {{user.email}}</li>
+        <li><b>Accesskey</b> - {{user.accesskey}}</li>
+        <li><b>Secretkey</b> - {{user.secretkey}}</li>
+    </ul>
 {% endblock %}

@@ -1,30 +1,31 @@
 {%  extends "polls/base_generic.html" %}
 
-{% block title %}<title>Add a new lifecycle policy</title>{% endblock %}
+{% block title %}<title>Add lifecycle</title>{% endblock %}
 
 {% block pageheading %}<h3>Add a new lifecycle policy</h3>{% endblock %}
 
 {% block sidebar %}
   <ul class="sidebar-nav">
     <li><a href="{% url 'index' %}">Home</a></li>
-    <li><a href="{% url 'bucket' email %}">My buckets</a> </li>
+    <li><a href="{% url 'newuser' %}">Add new User</a> </li>
+    <li><a href="{% url 'bucket' email %}">Buckets</a> </li>
   </ul>
 {% endblock %}
 
 {% block content %}
 
     {% if not message %}
-    <p> **Enter number of days after the creation date of bucket</p></br>
+    <p> **Enter number of days after the creation date of bucket</p><br>
 
     <form method="GET">
     {% csrf_token %}
-<pre>Enter Rule Name:          <input type="text" placeholder="Rule name" name="rule" ></input></br>
+        <pre>Enter Rule Name:          <input type="text" placeholder="Rule name" name="rule" /><br></pre>
 Transition Rules:
-<pre> Move to Storage_IA:     <input type="number"  placeholder="Number of days" name="ia" ></input>
- Move to Glacier:        <input type="number" placeholder="Number of days" name="glacier"></input></pre>
+<pre> Move to Storage_IA:     <input type="number"  placeholder="Number of days" name="ia" />
+ Move to Glacier:        <input type="number" placeholder="Number of days" name="glacier"></pre>
 
 Expiration Rule:
-<pre> Delete the bucket:      <input type="number" placeholder="Number of days" name="expire"></input></pre>
+<pre> Delete the bucket:      <input type="number" placeholder="Number of days" name="expire"/></pre>
     <input type="submit" value="Add Rule" />
     </form>
 

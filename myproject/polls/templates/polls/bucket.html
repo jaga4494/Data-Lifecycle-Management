@@ -1,11 +1,35 @@
-<ul>
+{%  extends "polls/base_generic.html" %}
 
+{% block title %}<title>Bucket</title>{% endblock %}
+
+{% block pageheading %}<h3>Bucket List</h3>{% endblock %}
+
+{% block sidebar %}
+  <ul class="sidebar-nav">
+    <li><a href="{% url 'index' %}">Home</a></li>
+    <li><a href="{% url 'newuser' %}">Add new User</a> </li>
+  </ul>
+{% endblock %}
+
+{% block content %}
+<form method="GET" id="myForm">
+    {% csrf_token %}
+<ul>
+{#need to extract the correct bucket_name for downloading#}
 {% for bucket in bucketlist %}
 
   <li><a href="{% url 'object' user_email=user.email bucket_name=bucket.name %}">{{bucket.name}}</a>
-<span style="display:inline-block; width: 100;"></span>
-<a href="{% url 'addlifecycle' user_email=user.email bucket_name=bucket.name %}">Add lifecycle rule</a>
+  <span style="display:inline-block; width: 100;"></span>
+  <a href="{% url 'addlifecycle' user_email=user.email bucket_name=bucket.name %}">Add lifecycle rule</a>
+  <span style="display:inline-block; width: 100;"></span>
+  <input type="text" name="bucketname" value="{{bucket.name}}" hidden/>
+  <a href="#" onclick="document.getElementById('myForm').submit();" >Download Bucket</a>
   </li>
 
 {% endfor %}
 </ul>
+</form>
+
+<b>{{ download_message }}</b>
+
+{% endblock %}
