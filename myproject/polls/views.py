@@ -1,11 +1,51 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponseForbidden
-from .models import User
+from polls.models import User, Bucket
 from django.template import loader
 import boto3
 import json
 import botocore
+import socket
+import pickle
+from django.utils.timezone import now
+
 from django.http import HttpResponseRedirect
+
+
+def displayObjectdetails(request):
+    """Home page of application"""
+    obj_list = Bucket.objects.all()
+    context = {'obj_list': obj_list}
+    return render(request, 'polls/objdetails.html', context)
+
+def newobject(request):
+    try:
+        s = socket.socket()
+        port = 12345
+        s.bind(('', port))
+        s.listen(5)
+        c, addr = s.accept()
+        a = pickle.loads(c.recv(1024))
+
+        # bucket_name = 'jagabucket1'
+        # object_name = 'sampleimg.png'
+        # last_modified = now()
+        # last_access = now()
+        print(a[0])
+        buc_entry = Bucket.objects.get(bucket=a[0], object=a[1])
+        msg = str(buc_entry.count) + "after filter"
+        buc_entry.count = buc_entry.count+1
+        buc_entry.last_modified = a[2]
+        buc_entry.last_accessed = a[3]
+        msg += "   after count"
+        # new_object = Bucket(email='jsarava@ncsu.edu', bucket=str(a[0]), object=str(a[1]), last_modified=(a[2]), last_accessed=(a[3]), count=2)
+        buc_entry.save()
+        msg += "   after save"
+        s.close()
+        return HttpResponse("<h2>   success </h2>")
+    except:
+        return HttpResponse("<h2>" + msg + "</h2>")
+
 
 # ex: /polls/newuser
 def newuser(request):
@@ -102,6 +142,7 @@ def about(request, user_email):
 # ex: /polls/jsarava@ncsu.edu/bucket
 def bucket(request, user_email):
     """Display Bucket list and option to download and add lifecycle rule"""
+    # newobject(request, user_email)
     user = get_object_or_404(User, pk=user_email)
     s3 = boto3.resource('s3', aws_access_key_id=user.accesskey, aws_secret_access_key=user.secretkey)
     bucketlist = s3.buckets.all()

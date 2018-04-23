@@ -6,6 +6,12 @@ urlpatterns = [
     # ex: /polls/
     path('', views.index, name='index'),
 
+    # ex: /polls/newobject
+    path('newobject/', views.newobject, name='newobject'),
+
+    # ex: /polls/objdetails
+    path('objdetails/', views.displayObjectdetails, name='displayObjectdetails'),
+
     # ex: /polls/newuser
     path('newuser/', views.newuser, name='newuser'),
 
