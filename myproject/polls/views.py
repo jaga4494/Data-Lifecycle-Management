@@ -11,14 +11,16 @@ from django.utils.timezone import now
 
 from django.http import HttpResponseRedirect
 
-
+# ex: /polls/objdetails
 def displayObjectdetails(request):
     """Home page of application"""
     obj_list = Bucket.objects.all()
     context = {'obj_list': obj_list}
     return render(request, 'polls/objdetails.html', context)
 
+# ex: /polls/newobject
 def newobject(request):
+    msg = "Error occurred try again!!"
     try:
         s = socket.socket()
         port = 12345
@@ -26,23 +28,25 @@ def newobject(request):
         s.listen(5)
         c, addr = s.accept()
         a = pickle.loads(c.recv(1024))
-
-        # bucket_name = 'jagabucket1'
-        # object_name = 'sampleimg.png'
-        # last_modified = now()
-        # last_access = now()
         print(a[0])
-        buc_entry = Bucket.objects.get(bucket=a[0], object=a[1])
-        msg = str(buc_entry.count) + "after filter"
-        buc_entry.count = buc_entry.count+1
-        buc_entry.last_modified = a[2]
-        buc_entry.last_accessed = a[3]
-        msg += "   after count"
-        # new_object = Bucket(email='jsarava@ncsu.edu', bucket=str(a[0]), object=str(a[1]), last_modified=(a[2]), last_accessed=(a[3]), count=2)
-        buc_entry.save()
-        msg += "   after save"
+        obj_count = Bucket.objects.filter(bucket=a[0], object=a[1]).count()
+        if obj_count != 0:
+            buc_entry = Bucket.objects.get(bucket=a[0], object=a[1])
+            # msg += str(obj_count) + " available entry "
+            # msg += str(buc_entry.count) + " after get "
+            buc_entry.count = buc_entry.count+1
+            buc_entry.last_modified = a[2]
+            buc_entry.last_accessed = a[3]
+            # msg += "   after count"
+            buc_entry.save()
+            msg = "Bucket: " + str(a[0]) + " Object: " + str(a[1]) + " accessed"
+        else:
+            new_obj = Bucket(email=str(a[4]), bucket=str(a[0]), object=str(a[1]), last_modified=str(a[2]),
+                             last_accessed=str(a[3]), count=1)
+            new_obj.save()
+            msg = "New entry added: " + "User: " + str(a[4]) + "Bucket: " + str(a[0]) + " Object: " + str(a[1])
         s.close()
-        return HttpResponse("<h2>   success </h2>")
+        return HttpResponse("<h2>" + msg + "</h2>")
     except:
         return HttpResponse("<h2>" + msg + "</h2>")
 
