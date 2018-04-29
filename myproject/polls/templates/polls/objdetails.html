@@ -10,12 +10,12 @@
 {#<ul>#}
 <table>
         <tr><th>Email</th><th>Bucket Name</th><th>Object Name</th><th>Creation Date</th><th>Last Modified</th>
-        <th>Last Accessed</th><th>Count</th><th>Frequency</th>
+        <th>Last Accessed</th><th>Count</th><th>Frequency</th><th>Cycle</th>
         </tr>
     {% for obj in obj_list %}
 
           <tr>
-          <th>{{obj.email}}</th>  <th>{{obj.bucket}}</th>  <th>{{obj.object}}</th>  <th>{{obj.creation_date}}</th>  <th>{{obj.last_modified}}</th>  <th>{{obj.last_accessed}}</th>  <th>{{obj.count}}</th>  <th>{{obj.frequency}}</th>
+          <th>{{obj.email}}</th>  <th>{{obj.bucket}}</th>  <th>{{obj.object}}</th>  <th>{{obj.creation_date}}</th>  <th>{{obj.last_modified}}</th>  <th>{{obj.last_accessed}}</th>  <th>{{obj.count}}</th>  <th>{{obj.frequency}}</th><th>{{obj.cycle}}</th>
           </tr>
 {#        <li>{{obj.last_accessed|sub:obj.last_modified }}</li>#}
 {##}

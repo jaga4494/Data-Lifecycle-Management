@@ -1,22 +1,20 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect
 from polls.models import User, Bucket
-from django.template import loader
 import boto3
 from datetime import datetime, timezone, timedelta
 import json
 import botocore
 import socket
 import pickle
-from django.utils.timezone import now
-
 
 # ex: /polls/objdetails
 def displayObjectdetails(request):
-    """Home page of application"""
+    """Display present object entry details from model Bucket"""
     obj_list = Bucket.objects.all()
     context = {'obj_list': obj_list}
     return render(request, 'polls/objdetails.html', context)
+
 
 # ex: /polls/newobject
 def newobject(request):
@@ -27,7 +25,7 @@ def newobject(request):
         msg += " before bind"
         s.bind(('', port))
         s.listen(5)
-        msg +=" before accept"
+        msg += " before accept"
         c, addr = s.accept()
         cycle_start_time = datetime.now(timezone.utc) - timedelta(days=1)
         cycle_end_time = cycle_start_time + timedelta(days=3)
@@ -35,58 +33,79 @@ def newobject(request):
         print(a[0])
         obj_count = Bucket.objects.filter(bucket=a[0], object=a[1]).count()
         if obj_count != 0:
-            # if entry is already present
+            # If entry is already present
             buc_entry = Bucket.objects.get(bucket=a[0], object=a[1])
-            buc_entry.count = buc_entry.count+1
-            # dont change last modified for GET
-            # compare existing last mod and client passed last mod if both same, it is get req so dont change last mod and
-            # update just count.....if different, update last modif
-            msg = "existing last modi: "+ str(buc_entry.last_modified) + "client passed last mod: "+ str(a[2])
+            buc_entry.count = buc_entry.count + 1
+
+            # Do not change last modified for GET. Compare existing last modified and client passed last modified
+            # if both are same, it is GET request. So do not change last modified and just update count.
+            # If different, it means this is PUT request and last modified need to be updated
+
+            msg = "existing last modi: " + str(buc_entry.last_modified) + "client passed last mod: " + str(a[2])
             if not str(buc_entry.last_modified) == str(a[2]):
                 buc_entry.last_modified = a[2]
                 msg += "last modi changed for PUT request"
             else:
                 msg += "last modi unchanged for GET request"
             buc_entry.last_accessed = a[3]
-            # msg += "   after count"
-            buc_entry.save()
             msg += "Bucket: " + str(a[0]) + " Object: " + str(a[1]) + " accessed"
         else:
-            # if adding new entry and creation date is same as modified date
-            new_obj = Bucket(email=str(a[4]), bucket=str(a[0]), object=str(a[1]), creation_date=str(a[2]), last_modified=str(a[2]),
-                             last_accessed=str(a[3]), count=1)
+            # If adding new entry and creation date is same as modified date
+            buc_entry = Bucket(email=str(a[4]), bucket=str(a[0]), object=str(a[1]), creation_date=str(a[2]),
+                               last_modified=str(a[2]),
+                               last_accessed=str(a[3]), count=1)
 
-
-            new_obj.save()
             msg = "New entry added: " + "User: " + str(a[4]) + "Bucket: " + str(a[0]) + " Object: " + str(a[1])
+        buc_entry.cycle['frequency'].append(calculate_frequency(buc_entry, cycle_start_time, cycle_end_time, msg))
+        buc_entry.cycle['start_time'].append(str(cycle_start_time))
+        buc_entry.cycle['end_time'].append(str(cycle_end_time))
+        buc_entry.save()
         s.close()
-        # msg += str(calculate_frequency(request, cycle_start_time, cycle_end_time))
-    #     return HttpResponse("<h2>" + msg + "</h2>")
-        return calculate_frequency(request, cycle_start_time, cycle_end_time, msg)
+        #     return HttpResponse("<h2>" + msg + "</h2>")
+        #     return calculate_frequency(request, cycle_start_time, cycle_end_time, msg)
     except:
         return HttpResponse("<h2>" + msg + "</h2>")
 
+    # After a cycle ends, make count of all entry to zero and calculate cumaulative frequency
+    set_count_zero()
+    calculate_cumulative_frequency()
 
-def calculate_frequency(request, cycle_start_time, cycle_end_time, msg):
+    return HttpResponse("<h2>" + msg + "</h2>")
+
+
+def set_count_zero():
+    """Set count field to zero after each cycle"""
+    Bucket.objects.all().update(count=0)
+
+
+def calculate_cumulative_frequency():
+    """Calculate cumulative frequency at the end of each cycle"""
     entry_list = Bucket.objects.all()
     for entry in entry_list:
-        if entry.count == 0:
-            entry.frequency = 0
-        else:
-            msg += "\r\n" + "count: " + str(entry.count) + "start: " + str(cycle_start_time) + " end: " + str(cycle_end_time)
-            if entry.creation_date is not None:
-                msg += "creation: " + str(entry.creation_date)
-                entry.frequency = entry.count / (cycle_end_time - entry.creation_date).days
-            else:
-                entry.frequency = entry.count / (cycle_end_time - cycle_start_time).days
-        msg += " frequency: " + str(entry.frequency) + "\r\n"
+        entry.frequency = round(sum(entry.cycle['frequency']) / len(entry.cycle['frequency']), 2)
         entry.save()
-    return HttpResponse("<h2>" + msg + "</h2>")
+
+
+def calculate_frequency(entry, cycle_start_time, cycle_end_time, msg):
+    """Calculates frequency of a passed entry"""
+    if entry.count == 0:
+        frequency = 0.0
+    else:
+        msg += "\r\n" + "count: " + str(entry.count) + "start: " + str(cycle_start_time) + " end: " + str(
+            cycle_end_time)
+        if entry.creation_date is not None:
+            msg += "creation: " + str(entry.creation_date)
+            frequency = round(entry.count / (cycle_end_time - entry.creation_date).days, 2)
+        else:
+            frequency = round(entry.count / (cycle_end_time - cycle_start_time).days, 2)
+    msg += " frequency: " + str(frequency) + "\r\n"
+    print("\r\n" + msg + "\r\n")
+    return frequency
 
 
 # ex: /polls/newuser
 def newuser(request):
-    """Method to add new user"""
+    """Add new user"""
     context = {}
     result = {}
     if request.POST.get('email'):
@@ -94,7 +113,8 @@ def newuser(request):
         result["email"] = request.POST.get('email')
         result["accesskey"] = request.POST.get('accesskey')
         result["secretkey"] = request.POST.get('secretkey')
-        new_user = User(name=result["name"], email=result["email"], accesskey=result["accesskey"], secretkey=result["secretkey"])
+        new_user = User(name=result["name"], email=result["email"], accesskey=result["accesskey"],
+                        secretkey=result["secretkey"])
         new_user.save()
         message = "User successfully added to the database!!"
 
@@ -183,7 +203,7 @@ def bucket(request, user_email):
     user = get_object_or_404(User, pk=user_email)
     s3 = boto3.resource('s3', aws_access_key_id=user.accesskey, aws_secret_access_key=user.secretkey)
     bucketlist = s3.buckets.all()
-    context = {'user': user, 'bucketlist': bucketlist }
+    context = {'user': user, 'bucketlist': bucketlist}
     if request.GET.get('bucketname'):
         context['download_message'] = download(request, str(request.GET.get('bucketname')), user_email)
     return render(request, 'polls/bucket.html', context)
@@ -216,4 +236,3 @@ def download(request, bucket_name, user_email):
         return "The bucket is downloaded !!"
     except botocore.exceptions.ClientError:
         return "You do not have required permission to access this page or required object does not exist !!"
-
