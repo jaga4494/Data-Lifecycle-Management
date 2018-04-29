@@ -1,15 +1,15 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect
 from polls.models import User, Bucket
 from django.template import loader
 import boto3
+from datetime import datetime, timezone, timedelta
 import json
 import botocore
 import socket
 import pickle
 from django.utils.timezone import now
 
-from django.http import HttpResponseRedirect
 
 # ex: /polls/objdetails
 def displayObjectdetails(request):
@@ -24,31 +24,64 @@ def newobject(request):
     try:
         s = socket.socket()
         port = 12345
+        msg += " before bind"
         s.bind(('', port))
         s.listen(5)
+        msg +=" before accept"
         c, addr = s.accept()
+        cycle_start_time = datetime.now(timezone.utc) - timedelta(days=1)
+        cycle_end_time = cycle_start_time + timedelta(days=3)
         a = pickle.loads(c.recv(1024))
         print(a[0])
         obj_count = Bucket.objects.filter(bucket=a[0], object=a[1]).count()
         if obj_count != 0:
+            # if entry is already present
             buc_entry = Bucket.objects.get(bucket=a[0], object=a[1])
-            # msg += str(obj_count) + " available entry "
-            # msg += str(buc_entry.count) + " after get "
             buc_entry.count = buc_entry.count+1
-            buc_entry.last_modified = a[2]
+            # dont change last modified for GET
+            # compare existing last mod and client passed last mod if both same, it is get req so dont change last mod and
+            # update just count.....if different, update last modif
+            msg = "existing last modi: "+ str(buc_entry.last_modified) + "client passed last mod: "+ str(a[2])
+            if not str(buc_entry.last_modified) == str(a[2]):
+                buc_entry.last_modified = a[2]
+                msg += "last modi changed for PUT request"
+            else:
+                msg += "last modi unchanged for GET request"
             buc_entry.last_accessed = a[3]
             # msg += "   after count"
             buc_entry.save()
-            msg = "Bucket: " + str(a[0]) + " Object: " + str(a[1]) + " accessed"
+            msg += "Bucket: " + str(a[0]) + " Object: " + str(a[1]) + " accessed"
         else:
-            new_obj = Bucket(email=str(a[4]), bucket=str(a[0]), object=str(a[1]), last_modified=str(a[2]),
+            # if adding new entry and creation date is same as modified date
+            new_obj = Bucket(email=str(a[4]), bucket=str(a[0]), object=str(a[1]), creation_date=str(a[2]), last_modified=str(a[2]),
                              last_accessed=str(a[3]), count=1)
+
+
             new_obj.save()
             msg = "New entry added: " + "User: " + str(a[4]) + "Bucket: " + str(a[0]) + " Object: " + str(a[1])
         s.close()
-        return HttpResponse("<h2>" + msg + "</h2>")
+        # msg += str(calculate_frequency(request, cycle_start_time, cycle_end_time))
+    #     return HttpResponse("<h2>" + msg + "</h2>")
+        return calculate_frequency(request, cycle_start_time, cycle_end_time, msg)
     except:
         return HttpResponse("<h2>" + msg + "</h2>")
+
+
+def calculate_frequency(request, cycle_start_time, cycle_end_time, msg):
+    entry_list = Bucket.objects.all()
+    for entry in entry_list:
+        if entry.count == 0:
+            entry.frequency = 0
+        else:
+            msg += "\r\n" + "count: " + str(entry.count) + "start: " + str(cycle_start_time) + " end: " + str(cycle_end_time)
+            if entry.creation_date is not None:
+                msg += "creation: " + str(entry.creation_date)
+                entry.frequency = (cycle_end_time - entry.creation_date).days /(entry.count)
+            else:
+                entry.frequency = (cycle_end_time - cycle_start_time).days / (entry.count)
+        msg += " frequency: " + str(entry.frequency) + "\r\n"
+        entry.save()
+    return HttpResponse("<h2>" + msg + "</h2>")
 
 
 # ex: /polls/newuser

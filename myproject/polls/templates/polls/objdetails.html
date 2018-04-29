@@ -1,13 +1,22 @@
+{% load mathfilters%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+
 </head>
 <body>
 <ul>
     {% for obj in obj_list %}
-          <li><pre>{{obj.email}}    {{obj.bucket}}      {{obj.object}}      {{obj.last_modified}}      {{obj.last_accessed}}     {{obj.count}}</pre></li>
+          <li><pre>{{obj.email}}  {{obj.bucket}}  {{obj.object}}  {{obj.creation_date}}  {{obj.last_modified}}  {{obj.last_accessed}}  {{obj.count}}  {{obj.frequency}} </pre></li>
+
+{#        <li>{{obj.last_accessed|sub:obj.last_modified }}</li>#}
+{##}
+{#        {% with am=obj.last_accessed|sub:obj.last_modified %}#}
+{##}
+{#        <li>Frequency: {{ am|div:obj.count }}</li>#}
+{#        {% endwith %}#}
     {% endfor %}
   </ul>
 </body>

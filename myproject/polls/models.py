@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime, timezone
 from django.utils.timezone import now
 # Create your models here.
 class User(models.Model):
@@ -13,9 +14,11 @@ class Bucket(models.Model):
     email = models.TextField()
     bucket = models.TextField()
     object = models.TextField()
+    creation_date = models.DateTimeField(null=True, blank=True, default=None)
     last_modified = models.DateTimeField()
     last_accessed = models.DateTimeField()
     count = models.IntegerField(default=1)
+    frequency = models.FloatField(default=0)
 
     class Meta:
         unique_together = (("bucket", "object"),)
