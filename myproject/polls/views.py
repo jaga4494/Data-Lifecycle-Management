@@ -76,9 +76,9 @@ def calculate_frequency(request, cycle_start_time, cycle_end_time, msg):
             msg += "\r\n" + "count: " + str(entry.count) + "start: " + str(cycle_start_time) + " end: " + str(cycle_end_time)
             if entry.creation_date is not None:
                 msg += "creation: " + str(entry.creation_date)
-                entry.frequency = (cycle_end_time - entry.creation_date).days /(entry.count)
+                entry.frequency = entry.count / (cycle_end_time - entry.creation_date).days
             else:
-                entry.frequency = (cycle_end_time - cycle_start_time).days / (entry.count)
+                entry.frequency = entry.count / (cycle_end_time - cycle_start_time).days
         msg += " frequency: " + str(entry.frequency) + "\r\n"
         entry.save()
     return HttpResponse("<h2>" + msg + "</h2>")

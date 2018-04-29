@@ -1,4 +1,6 @@
 from django.db import models
+import ast
+from django.contrib.postgres.fields import ArrayField, JSONField
 from datetime import datetime, timezone
 from django.utils.timezone import now
 # Create your models here.
@@ -10,6 +12,13 @@ class User(models.Model):
     def __str__(self):
         return self.email
 
+def cycle_default():
+    return {
+        'start_time': [],
+        'end_time': [],
+        'frequency': []
+    }
+
 class Bucket(models.Model):
     email = models.TextField()
     bucket = models.TextField()
@@ -19,6 +28,7 @@ class Bucket(models.Model):
     last_accessed = models.DateTimeField()
     count = models.IntegerField(default=1)
     frequency = models.FloatField(default=0)
+    cycle = JSONField(blank=True, default= cycle_default)
 
     class Meta:
         unique_together = (("bucket", "object"),)
