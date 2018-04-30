@@ -33,7 +33,7 @@ Expiration Rule:
 {% elif httpcode.ResponseMetadata.HTTPStatusCode == 200 %}
         <b>{{message}}</b></br></br>
         {% for k,v in result.items %}
-            {{k}} --- {{v}}</br>
+            {{k}} --- {{v}} </br>
         {% endfor %}
         </b></br></br>
         {{newrule}}

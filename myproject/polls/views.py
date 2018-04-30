@@ -103,6 +103,14 @@ def calculate_frequency(entry, cycle_start_time, cycle_end_time, msg):
     return frequency
 
 
+# ex: /polls/jsarava@ncsu.edu/<bucketname>/<objectname>/cycle
+def display_object_cycle(request, user_email, bucket_name, object_name):
+    """Display all previous cycles of a object"""
+    obj = Bucket.objects.get(bucket=bucket_name, object=object_name)
+    context ={'obj_cumulative_freq': obj.frequency, 'obj_start_time': obj.cycle['start_time'], 'obj_end_time': obj.cycle['end_time'], 'obj_frequency': obj.cycle['frequency']}
+    return render(request, 'polls/display_object_cycle.html', context)
+
+
 # ex: /polls/newuser
 def newuser(request):
     """Add new user"""
@@ -236,3 +244,6 @@ def download(request, bucket_name, user_email):
         return "The bucket is downloaded !!"
     except botocore.exceptions.ClientError:
         return "You do not have required permission to access this page or required object does not exist !!"
+
+
+

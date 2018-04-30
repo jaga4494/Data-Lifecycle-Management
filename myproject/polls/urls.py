@@ -29,4 +29,7 @@ urlpatterns = [
 
     # ex: /polls/jsarava@ncsu.edu/<bucketname>/addlifecycle
     path('<str:user_email>/<str:bucket_name>/addlifecycle/', views.addlifecycle, name='addlifecycle'),
+
+    # ex: /polls/jsarava@ncsu.edu/<bucketname>/<objectname>/cycle
+    path('<str:user_email>/<str:bucket_name>/<str:object_name>/cycle/', views.display_object_cycle, name='displaycycle'),
 ]

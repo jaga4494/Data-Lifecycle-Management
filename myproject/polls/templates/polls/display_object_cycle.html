@@ -1,0 +1,25 @@
+
+<table>
+<tr><th>Start Time</th> <th>End Time</th> <th>Frequency</th></tr>
+<tr>
+<td>
+{% for i in obj_start_time %}
+{{ i }} </br></br>
+{% endfor %}
+</td>
+
+<td>
+{% for j in obj_end_time %}
+{{ j }} </br></br>
+{% endfor %}
+</td>
+
+<td>
+{% for k in obj_frequency %}
+{{ k }} </br></br>
+{% endfor %}
+</td>
+</tr>
+</table>
+<br><br>
+Cumulative Frequency: {{ obj_cumulative_freq }}
