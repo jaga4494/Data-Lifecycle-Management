@@ -1,4 +1,9 @@
+{%  extends "polls/base_generic.html" %}
 
+{% block title %}<title>Object Cycle</title>{% endblock %}
+{% block pageheading %}<h3>Object frequency in different cycles</h3>{% endblock %}
+
+{% block content %}
 <table>
 <tr><th>Start Time</th> <th>End Time</th> <th>Frequency</th></tr>
 <tr>
@@ -23,3 +28,4 @@
 </table>
 <br><br>
 Cumulative Frequency: {{ obj_cumulative_freq }}
+{% endblock %}

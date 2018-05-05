@@ -1,11 +1,9 @@
 {%  extends "polls/base_generic.html" %}
 
-
 {% block title %}<title>User List</title>{% endblock %}
 {% block pageheading %}<h3>User List</h3>{% endblock %}
 {% block content %}
 {% if user_list %}
-
   <ul>
     {% for user in user_list %}
           <li><a href="{% url 'about' user.email %}">{{user.name}}</a>

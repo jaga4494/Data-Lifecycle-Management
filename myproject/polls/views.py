@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponse
 from polls.models import User, Bucket
 import boto3
 from datetime import datetime, timezone, timedelta
@@ -7,6 +7,19 @@ import json
 import botocore
 import socket
 import pickle
+from signal import signal, SIGPIPE, SIG_DFL
+import matplotlib.pyplot as plt; plt.rcdefaults()
+
+s3 = boto3.resource('s3')
+s3client = boto3.client('s3')
+HOST = ''
+PORT = 50000
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(1)
+cycle_count = 30
+cycle_time = 15
+
 
 # ex: /polls/objdetails
 def displayObjectdetails(request):
@@ -16,61 +29,207 @@ def displayObjectdetails(request):
     return render(request, 'polls/objdetails.html', context)
 
 
+# Normal distribution Graph
+def plot_normal_graph(start, end, count_list, plot_name):
+    """Plot graph"""
+    xtime = []
+    xstart = start
+    delta = timedelta(seconds=cycle_time)
+    t = []
+    for i in range(0, len(count_list)):
+        t.append(start)
+        start += delta
+    print(t)
+    print("count list: ", count_list)
+    plt.hist(count_list)
+    plt.xlabel("Over cycles")
+    plt.ylabel("Request Count")
+    plt.savefig(plot_name + '.png', bbox_inches='tight')
+
+
 # ex: /polls/newobject
 def newobject(request):
+    """Run server to accept client requests"""
     msg = "Error occurred try again!!"
+    c, addr = s.accept()
+    b = None
+    msg1 = ""
+    old_cum_freq = None
+    flag = 0
+    plot_name =""
     try:
-        s = socket.socket()
-        port = 12345
-        msg += " before bind"
-        s.bind(('', port))
-        s.listen(5)
-        msg += " before accept"
-        c, addr = s.accept()
-        cycle_start_time = datetime.now(timezone.utc) - timedelta(days=1)
-        cycle_end_time = cycle_start_time + timedelta(days=3)
-        a = pickle.loads(c.recv(1024))
-        print(a[0])
-        obj_count = Bucket.objects.filter(bucket=a[0], object=a[1]).count()
-        if obj_count != 0:
-            # If entry is already present
-            buc_entry = Bucket.objects.get(bucket=a[0], object=a[1])
-            buc_entry.count = buc_entry.count + 1
+        request_list = []
+        initial_time = datetime.now(timezone.utc)
+        sum1 = 0
+        for cycle in range(0, cycle_count):
+            print("Cycle " + str(cycle +1))
+            start = datetime.now(timezone.utc)
+            end = start + timedelta(seconds=cycle_time)
+            count = 0
+            try:
+                while datetime.now(timezone.utc) < end:
+                    a = pickle.loads(c.recv(2048))
+                    if not a or a == "next":
+                        break
+                    b = a
+                    print("Received data: " + str(a))
+                    c.send(str("received " + str(count)).encode())
+                    count += 1
+                    try:
+                        msg = " program started\r\n"
+                        obj_count = Bucket.objects.filter(bucket=a[0], object=a[1]).count()
+                        if a[5] == "noise" and flag == 0:
+                            buc = Bucket.objects.get(bucket=a[0], object=a[1])
+                            old_cum_freq = buc.frequency
+                            prepare_for_noise(buc)
+                            flag = 1
 
-            # Do not change last modified for GET. Compare existing last modified and client passed last modified
-            # if both are same, it is GET request. So do not change last modified and just update count.
-            # If different, it means this is PUT request and last modified need to be updated
+                        if obj_count != 0:
+                            # If entry is already present
+                            buc_entry = Bucket.objects.get(bucket=a[0], object=a[1])
+                            # to handle GET and put request for existing object
+                            msg += "existing last modi: " + str(buc_entry.last_modified) + "client passed last mod: " + str(a[2])
+                            if not str(buc_entry.last_modified) == str(a[2]):
+                                buc_entry.last_modified = a[2]
+                                msg += "last modi changed for PUT request"
+                            else:
+                                msg += "last modi unchanged for GET request"
+                            buc_entry.last_accessed = a[3]
+                            msg += "Bucket: " + str(a[0]) + " Object: " + str(a[1]) + " accessed"
 
-            msg = "existing last modi: " + str(buc_entry.last_modified) + "client passed last mod: " + str(a[2])
-            if not str(buc_entry.last_modified) == str(a[2]):
-                buc_entry.last_modified = a[2]
-                msg += "last modi changed for PUT request"
+                        else:
+                            # If adding new entry and creation date is same as modified date
+                            freq = []
+                            freq.append(round(1 / (end - a[2]).seconds, 2))
+                            start_time = []
+                            start_time.append(str(start))
+                            end_time = []
+                            end_time.append(str(end))
+                            buc_entry = Bucket(email=str(a[4]), bucket=str(a[0]), object=str(a[1]), creation_date=str(a[2]),
+                                               last_modified=str(a[2]),
+                                               last_accessed=str(a[3]), count=1, cycle={'start_time': start_time, 'end_time': end_time, 'frequency': freq})
+
+                            msg += "New entry added: " + "User: " + str(a[4]) + "Bucket: " + str(a[0]) + " Object: " + str(a[1])
+                            buc_entry.save()
+                        msg += "after saving in db"
+
+                    except Exception as e:
+                        return HttpResponse("<h2>" + e + "</h2>")
+            except Exception as e:
+                print("client stopped sending requests")
+                print("cycle still running")
+                while datetime.now(timezone.utc) < end:
+                    a = 8
+            print("Total number of requests received in cycle " + str(cycle + 1) + " is " + str(count))
+            if not count:
+                break
+            buc_entry.count = count
+            sum1 += count
+            buc_entry.cycle['frequency'].append(calculate_frequency(buc_entry, start, end, msg))
+            buc_entry.cycle['start_time'].append(str(start))
+            buc_entry.cycle['end_time'].append(str(end))
+            buc_entry.count = 0  # preparing count for next cycle
+            print("count made 0")
+            buc_entry.save()
+            print("server stopped")
+            try:
+                c.send(str("stop").encode())
+            except:
+                just = 10
+            print("--------------------------------------------")
+            request_list.append(count)
+
+    except Exception as e:
+        if count:
+            sum1 += count
+            request_list.append(count)
+        signal(SIGPIPE, SIG_DFL)
+        print("program stopped")
+    final_time = datetime.now(timezone.utc)
+    c.close()
+    # After a cycle ends, make count of all entry to zero and calculate cumulative frequency
+
+    # set_count_zero()
+    plot_name = str(b[5])
+    buc_entry1 = Bucket.objects.get(bucket=b[0], object=b[1])
+    buc_entry1.count= sum(request_list)
+    buc_entry1.save()
+    calculate_cumulative_frequency(b[5])
+    if b[5] == "noise":
+        buc_entry2 = Bucket.objects.get(bucket=b[0], object=b[1])
+        new_cum_freq = calculate_cumulative_frequency_each(buc_entry2)
+        if b[8] == "normal":
+            msg1+= "\r\n Previous Cumulative frequency " + str(old_cum_freq) + "  New frequency " + str(new_cum_freq)
+            msg1 += " \r\n\r\n Average New requests per cycle =" + str(new_cum_freq*cycle_time)
+            msg1 += "\r\n Mean = " + str(b[6]) + " Standard deviation " + str(b[7]) + " Mean - 2*Standard deviation = " + str(b[6] - (2*b[7]))
+            msg1 += "\r\n "
+            if (new_cum_freq * cycle_time) < (b[6] - (2*b[7])):
+                msg1 += " \r\nAverage New requests per cycle for this object is less than Mean - 2*Standard deviation," \
+                        " hence it has to be moved to Standard-IA"
+                copy_source = {
+                    'Bucket': str(b[0]),
+                    'Key': str(b[1])
+                }
+                s3client.copy(
+                  copy_source, str(b[0]), str(b[1]),
+                  ExtraArgs = {
+                    'StorageClass': 'STANDARD_IA',
+                    'MetadataDirective': 'COPY'
+                  }
+                )
+                msg1 += "Bucket: " + str(b[0]) + " Object: " + str(b[1]) + "has been moved to STANDARD-IA"
             else:
-                msg += "last modi unchanged for GET request"
-            buc_entry.last_accessed = a[3]
-            msg += "Bucket: " + str(a[0]) + " Object: " + str(a[1]) + " accessed"
-        else:
-            # If adding new entry and creation date is same as modified date
-            buc_entry = Bucket(email=str(a[4]), bucket=str(a[0]), object=str(a[1]), creation_date=str(a[2]),
-                               last_modified=str(a[2]),
-                               last_accessed=str(a[3]), count=1)
+                msg1 += " \r\nAverage New requests per cycle for this object is greater than or equal to Mean - 2*Standard deviation," \
+                        " hence it can stay at S3-Standard and not necessary move to STANDARD-IA"
+        elif b[8] == "random":
+            msg1 += "\r\n Previous Cumulative frequency " + str(old_cum_freq) + "  New frequency " + str(new_cum_freq)
+            msg1 += " \r\n\r\n Average New requests per cycle =" + str(new_cum_freq * cycle_time)
+            msg1 += "\r\n "
+            if old_cum_freq > new_cum_freq:
+                msg1 += " \r\nAverage New requests per cycle for this object is less than average request frequency computer earlier," \
+                        " hence it has to be moved to Standard-IA"
+                copy_source = {
+                    'Bucket': str(b[0]),
+                    'Key': str(b[1])
+                }
+                s3client.copy(
+                    copy_source, str(b[0]), str(b[1]),
+                    ExtraArgs={
+                        'StorageClass': 'STANDARD_IA',
+                        'MetadataDirective': 'COPY'
+                    }
+                )
+                msg1 += "Bucket: " + str(b[0]) + " Object: " + str(b[1]) + "has been moved to STANDARD-IA"
+            else:
+                msg1 += " \r\nAverage New requests per cycle for this object is greater than average computed earlier," \
+                        " hence it can stay at S3-Standard. Not moving to STANDARD-IA"
+        # add code for poisson
 
-            msg = "New entry added: " + "User: " + str(a[4]) + "Bucket: " + str(a[0]) + " Object: " + str(a[1])
-        buc_entry.cycle['frequency'].append(calculate_frequency(buc_entry, cycle_start_time, cycle_end_time, msg))
-        buc_entry.cycle['start_time'].append(str(cycle_start_time))
-        buc_entry.cycle['end_time'].append(str(cycle_end_time))
-        buc_entry.save()
-        s.close()
-        #     return HttpResponse("<h2>" + msg + "</h2>")
-        #     return calculate_frequency(request, cycle_start_time, cycle_end_time, msg)
+    try:
+        plot_normal_graph(initial_time, final_time, request_list, plot_name)
     except:
-        return HttpResponse("<h2>" + msg + "</h2>")
+        z = 10
 
-    # After a cycle ends, make count of all entry to zero and calculate cumaulative frequency
-    set_count_zero()
-    calculate_cumulative_frequency()
+    msg1 += "Successfully received all the requests !!"
+    return HttpResponse("<h3>" + msg1 + "</h3>")
 
-    return HttpResponse("<h2>" + msg + "</h2>")
+
+def calculate_cumulative_frequency_each(entry):
+    """Calculate cumulative frequency at the end of each cycle"""
+    freq_len = len(entry.cycle['frequency'])
+    if not freq_len:
+        freq_len = 1
+    frequency = round(sum(entry.cycle['frequency']) / freq_len, 2)
+    return frequency
+
+
+def prepare_for_noise(entry):
+    """Reset count and cycle values to prepare for noise cycle"""
+    entry.count = 0
+    entry.cycle['frequency'] = []
+    entry.cycle['start_time'] = []
+    entry.cycle['end_time'] = []
+    entry.save()
 
 
 def set_count_zero():
@@ -78,12 +237,17 @@ def set_count_zero():
     Bucket.objects.all().update(count=0)
 
 
-def calculate_cumulative_frequency():
+def calculate_cumulative_frequency(noise):
     """Calculate cumulative frequency at the end of each cycle"""
     entry_list = Bucket.objects.all()
     for entry in entry_list:
-        entry.frequency = round(sum(entry.cycle['frequency']) / len(entry.cycle['frequency']), 2)
-        entry.save()
+        freq_len = len(entry.cycle['frequency'])
+        if not freq_len:
+            freq_len = 1
+        frequency = round(sum(entry.cycle['frequency']) / freq_len, 2)
+        if not noise == "noise":
+            entry.frequency = frequency
+            entry.save()
 
 
 def calculate_frequency(entry, cycle_start_time, cycle_end_time, msg):
@@ -93,11 +257,12 @@ def calculate_frequency(entry, cycle_start_time, cycle_end_time, msg):
     else:
         msg += "\r\n" + "count: " + str(entry.count) + "start: " + str(cycle_start_time) + " end: " + str(
             cycle_end_time)
-        if entry.creation_date is not None:
+        if entry.creation_date is not None and entry.creation_date > cycle_start_time:
             msg += "creation: " + str(entry.creation_date)
-            frequency = round(entry.count / (cycle_end_time - entry.creation_date).days, 2)
+            frequency = round(entry.count / (cycle_end_time - entry.creation_date).seconds, 2)
         else:
-            frequency = round(entry.count / (cycle_end_time - cycle_start_time).days, 2)
+            frequency = round(entry.count / (cycle_end_time - cycle_start_time).seconds, 2)
+
     msg += " frequency: " + str(frequency) + "\r\n"
     print("\r\n" + msg + "\r\n")
     return frequency

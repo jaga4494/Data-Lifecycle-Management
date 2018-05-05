@@ -15,7 +15,9 @@
 <form method="GET" id="myForm">
     {% csrf_token %}
 <ul>
-{#need to extract the correct bucket_name for downloading#}
+
+{# Need to extract the correct bucket_name for downloading #}
+
 {% for bucket in bucketlist %}
 
   <li><a href="{% url 'object' user_email=user.email bucket_name=bucket.name %}">{{bucket.name}}</a>

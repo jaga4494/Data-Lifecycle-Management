@@ -11,20 +11,26 @@ s3client = boto3.client('s3')
 # print(s3client.head_object(Bucket="jagabucket1", Key="4_666.png"))
 
 
+# for glacier
+# glacier = boto3.resource('glacier')
+# vault = glacier.Vault('account_id','name')
+
+
+
 
 # change the storage class of an object -- working
-# copy_source = {
-#     'Bucket': 'jagabucket1',
-#     'Key': 'ESA Project Abstract.pdf'
-# }
-#
-# s3client.copy_from(
-#   copy_source, 'jagabucket1', 'ESA Project Abstract.pdf',
-#   ExtraArgs = {
-#     'StorageClass': 'GLACIER',
-#     'MetadataDirective': 'COPY'
-#   }
-# )
+copy_source = {
+    'Bucket': 'jagabucket1',
+    'Key': 'abc.txt'
+}
+
+s3client.copy_from(
+  copy_source, 'jagabucket1', 'abc.txt',
+  ExtraArgs = {
+    'StorageClass': 'GLACIER',
+    'MetadataDirective': 'COPY'
+  }
+)
 # change the storage class of an object -- working
 
 

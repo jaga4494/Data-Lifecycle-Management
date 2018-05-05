@@ -1,32 +1,27 @@
+{%  extends "polls/base_generic.html" %}
 {% load mathfilters%}
+
+{% block pageheading %}<h3>All Object Cycle entries</h3>{% endblock %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    {% block title %}<title>Object Cycle entry</title>{% endblock %}
 
 </head>
 <body>
-{#<ul>#}
+{% block content %}
 <table>
         <tr><th>Email</th><th>Bucket Name</th><th>Object Name</th><th>Creation Date</th><th>Last Modified</th>
-        <th>Last Accessed</th><th>Count</th><th>Frequency</th><th>Cycle</th>
+        <th>Last Accessed</th><th>Count</th><th>Frequency</th><th>Cycle</th><th>Wrong Cycle</th>
         </tr>
     {% for obj in obj_list %}
-
           <tr>
-          <th>{{obj.email}}</th>  <th>{{obj.bucket}}</th>  <th>{{obj.object}}</th>  <th>{{obj.creation_date}}</th>  <th>{{obj.last_modified}}</th>  <th>{{obj.last_accessed}}</th>  <th>{{obj.count}}</th>  <th>{{obj.frequency}}</th><th>{{obj.cycle}}</th>
+          <th>{{obj.email}}</th>  <th>{{obj.bucket}}</th>  <th>{{obj.object}}</th>  <th>{{obj.creation_date}}</th>  <th>{{obj.last_modified}}</th>  <th>{{obj.last_accessed}}</th>  <th>{{obj.count}}</th>  <th>{{obj.frequency}}</th><th>{{obj.cycle}}</th><th>{{obj.wrong_cycle}}</th>
           </tr>
-{#        <li>{{obj.last_accessed|sub:obj.last_modified }}</li>#}
-{##}
-{#        {% with am=obj.last_accessed|sub:obj.last_modified %}#}
-{##}
-{#        <li>Frequency: {{ am|div:obj.count }}</li>#}
-{#        {% endwith %}#}
-
-
     {% endfor %}
 </table>
-{#  </ul>#}
 </body>
+{% endblock %}
 </html>
