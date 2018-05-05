@@ -1,2 +1,3 @@
 # Data-Lifecycle-Management
-S3, S3-IA and Glacier to manage data lifecycle
+
+Move data to S3 STANDARD-IA when the cumulative frequency requests is less (Mean - 2* Standard) for normal distribution and less than previously set cumulative frequency for random distribution.
